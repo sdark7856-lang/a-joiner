@@ -53,6 +53,19 @@ In Discord, run **`/setup`** and pick an icon style. Then `/config view` to revi
 
 ---
 
+## 🌐 Host it 24/7
+
+To keep the bot online when your computer is off, deploy it to an always-on host.
+A `Dockerfile`, `render.yaml` blueprint and `Procfile` are included. See the
+step-by-step guide in **[docs/HOSTING.md](docs/HOSTING.md)** covering:
+
+- **Railway** — easiest, free credit (recommended)
+- **Render** — one-click Blueprint
+- **Docker** — one command on any VPS
+- **VPS + PM2** — classic always-on setup
+
+---
+
 ## ⚙️ Configuration
 
 Everything is configured in-Discord — no editing files:
