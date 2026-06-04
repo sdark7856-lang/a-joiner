@@ -1,0 +1,16 @@
+# Render blueprint for hosting the bot as a background worker.
+# Import this repo at https://render.com → New → Blueprint.
+services:
+  - type: worker
+    name: zah-hub
+    runtime: node
+    plan: starter
+    buildCommand: npm install --omit=dev --omit=optional --no-audit --no-fund
+    startCommand: node src/index.js
+    envVars:
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: CLIENT_ID
+        sync: false
+      - key: GUILD_ID
+        sync: false
