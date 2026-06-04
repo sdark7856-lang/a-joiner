@@ -76,10 +76,37 @@ const TEMPLATE = [
   },
 ];
 
+// Staff & member role ladder. Created highest-first so Discord stacks them in
+// the right order. Emoji icons sit beside each name. `admin` grants
+// Administrator; `staff` roles can see the staff-only category.
+const ROLE_TEMPLATE = [
+  { key: 'owner', name: '👑 Owner', color: 0xf1c40f, hoist: true, admin: true },
+  { key: 'headAdmin', name: '💎 Head Admin', color: 0xe74c3c, hoist: true, admin: true },
+  { key: 'admin', name: '🛡️ Admin', color: 0xe67e22, hoist: true, admin: true },
+  { key: 'headMod', name: '⚔️ Head Mod', color: 0x9b59b6, hoist: true, staff: true,
+    perms: ['BanMembers', 'KickMembers', 'ModerateMembers', 'ManageMessages', 'ManageNicknames', 'MuteMembers', 'DeafenMembers', 'MoveMembers', 'ViewAuditLog', 'ManageThreads'] },
+  { key: 'mod', name: '🔨 Moderator', color: 0x3498db, hoist: true, staff: true,
+    perms: ['KickMembers', 'ModerateMembers', 'ManageMessages', 'ManageNicknames', 'MuteMembers', 'ViewAuditLog'] },
+  { key: 'helper', name: '🎧 Helper', color: 0x1abc9c, hoist: true, staff: true,
+    perms: ['ManageMessages', 'ModerateMembers'] },
+  { key: 'staff', name: '⭐ Staff', color: 0x5865f2, hoist: true, staff: true, perms: [] },
+  { key: 'member', name: '👤 Member', color: 0x2ecc71, hoist: false, perms: [] },
+  { key: 'bots', name: '🤖 Bots', color: 0x95a5a6, hoist: true, perms: [] },
+  { key: 'muted', name: '💤 Muted', color: 0x4f545c, hoist: false, perms: [] },
+];
+
 async function ensureRole(guild, name, options) {
   const existing = guild.roles.cache.find((r) => r.name === name);
   if (existing) return existing;
-  return guild.roles.create({ name, ...options });
+  try {
+    return await guild.roles.create({ name, ...options });
+  } catch {
+    // Bot may lack permission to grant some flags (e.g. Administrator); make a
+    // cosmetic role instead so setup still completes.
+    return guild.roles
+      .create({ name, color: options.color, hoist: options.hoist, reason: options.reason })
+      .catch(() => null);
+  }
 }
 
 module.exports = {
@@ -121,17 +148,25 @@ module.exports = {
       embeds: [embed.info(`🛠️ Building your server with the **${symbol}** style… this takes a moment.`)],
     });
 
-    // Roles used by moderation + staff-only areas.
-    const mutedRole = await ensureRole(guild, 'Muted', {
-      color: 0x607d8b,
-      reason: 'Zah Hub setup: mute role',
-      permissions: [],
-    });
-    const staffRole = await ensureRole(guild, 'Staff', {
-      color: 0x5865f2,
-      hoist: true,
-      reason: 'Zah Hub setup: staff role',
-    });
+    // ----- Build the role ladder (highest first → correct hierarchy) -----
+    const roles = {};
+    const staffRoleIds = [];
+    for (const def of ROLE_TEMPLATE) {
+      let permissions = [];
+      if (def.admin) permissions = [PermissionFlagsBits.Administrator];
+      else if (def.perms) permissions = def.perms.map((p) => PermissionFlagsBits[p]).filter(Boolean);
+      const role = await ensureRole(guild, def.name, {
+        color: def.color,
+        hoist: def.hoist,
+        permissions,
+        reason: 'Zah Hub setup: role ladder',
+      });
+      if (!role) continue;
+      roles[def.key] = role;
+      if (def.admin || def.staff) staffRoleIds.push(role.id);
+    }
+    const mutedRole = roles.muted;
+    const staffRole = roles.staff;
 
     const everyone = guild.roles.everyone;
     const created = { categories: 0, text: 0, voice: 0 };
@@ -139,8 +174,9 @@ module.exports = {
     let panelChannel = null;
 
     for (const cat of TEMPLATE) {
-      const overwrites = [
-        {
+      const overwrites = [];
+      if (mutedRole) {
+        overwrites.push({
           id: mutedRole.id,
           deny: [
             PermissionFlagsBits.SendMessages,
@@ -149,11 +185,11 @@ module.exports = {
             PermissionFlagsBits.SendMessagesInThreads,
             PermissionFlagsBits.CreatePublicThreads,
           ],
-        },
-      ];
+        });
+      }
       if (cat.staffOnly) {
         overwrites.push({ id: everyone.id, deny: [PermissionFlagsBits.ViewChannel] });
-        overwrites.push({ id: staffRole.id, allow: [PermissionFlagsBits.ViewChannel] });
+        for (const rid of staffRoleIds) overwrites.push({ id: rid, allow: [PermissionFlagsBits.ViewChannel] });
       }
 
       const category = await guild.channels.create({
@@ -185,10 +221,26 @@ module.exports = {
       }
     }
 
-    // Persist auto-wired config + the muted role id.
+    // Persist auto-wired config + role ids.
     for (const [k, v] of Object.entries(settings)) client.db.setSetting(guild.id, k, v);
-    client.db.setSetting(guild.id, 'mutedRole', mutedRole.id);
-    client.db.setSetting(guild.id, 'staffRole', staffRole.id);
+    if (mutedRole) client.db.setSetting(guild.id, 'mutedRole', mutedRole.id);
+    if (staffRole) client.db.setSetting(guild.id, 'staffRole', staffRole.id);
+    client.db.setSetting(
+      guild.id,
+      'roleIds',
+      Object.fromEntries(Object.entries(roles).map(([k, r]) => [k, r.id])),
+    );
+
+    // Give bots the 🤖 Bots role and the server owner the 👑 Owner role.
+    if (roles.bots) {
+      for (const m of guild.members.cache.filter((mem) => mem.user.bot).values()) {
+        m.roles.add(roles.bots).catch(() => {});
+      }
+    }
+    if (roles.owner) {
+      const owner = await guild.members.fetch(guild.ownerId).catch(() => null);
+      owner?.roles.add(roles.owner).catch(() => {});
+    }
 
     // Drop a ticket panel in the support channel.
     if (panelChannel) {
@@ -217,7 +269,7 @@ module.exports = {
           `**Categories:** ${created.categories}\n` +
           `**Text channels:** ${created.text}\n` +
           `**Voice channels:** ${created.voice}\n` +
-          `**Roles created:** Muted, Staff\n\n` +
+          `**Roles created:** 👑 Owner › 💎 Head Admin › 🛡️ Admin › ⚔️ Head Mod › 🔨 Moderator › 🎧 Helper › ⭐ Staff › 👤 Member › 🤖 Bots › 💤 Muted\n\n` +
           `Mod-log, welcome, tickets, starboard, suggestions & level-up channels were auto-configured. ` +
           `Run \`/config view\` to review everything.`,
         'Setup Complete',
