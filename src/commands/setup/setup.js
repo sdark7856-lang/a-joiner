@@ -20,58 +20,35 @@ const STYLES = {
   heart: '🖤',
 };
 
-// The server blueprint. `setting` keys auto-wire channels into bot config.
+// Lean script-hub server: ~9 channels total. Normal chat, staff chat, a VC,
+// and the essentials a script hub needs. `setting` keys auto-wire config.
 const TEMPLATE = [
   {
-    name: 'WELCOME', emoji: '👋',
-    channels: [
-      { name: 'welcome', setting: 'welcomeChannel' },
-      { name: 'rules' },
-      { name: 'announcements' },
-      { name: 'roles' },
-    ],
+    name: 'INFORMATION', emoji: '📢',
+    channels: [{ name: 'announcements' }],
   },
   {
-    name: 'COMMUNITY', emoji: '💬',
+    name: 'SCRIPT HUB', emoji: '📜',
     channels: [
-      { name: 'general' },
-      { name: 'media' },
-      { name: 'memes' },
-      { name: 'bot-commands' },
-      { name: 'counting' },
-    ],
-  },
-  {
-    name: 'ENGAGEMENT', emoji: '⭐',
-    channels: [
-      { name: 'level-ups', setting: 'levelUpChannel' },
-      { name: 'starboard', setting: 'starboardChannel' },
-      { name: 'suggestions', setting: 'suggestionChannel' },
-      { name: 'confessions', setting: 'confessionChannel' },
-    ],
-  },
-  {
-    name: 'FUN & GAMES', emoji: '🎮',
-    channels: [
-      { name: 'games' },
-      { name: 'economy' },
-      { name: 'music', setting: 'musicChannel' },
+      { name: 'scripts' },
+      { name: 'get-key' },
+      { name: 'chat', setting: 'welcomeChannel' },
+      { name: 'vouches' },
     ],
   },
   {
     name: 'SUPPORT', emoji: '🎫',
-    channels: [{ name: 'open-a-ticket', setting: 'ticketChannel', panel: 'ticket' }],
+    channels: [{ name: 'create-ticket', setting: 'ticketChannel', panel: 'ticket' }],
   },
   {
     name: 'VOICE', emoji: '🔊',
-    voice: [{ name: 'General' }, { name: 'Music' }, { name: 'Gaming' }, { name: 'AFK' }],
+    voice: [{ name: 'Voice Chat' }],
   },
   {
     name: 'STAFF', emoji: '🛡️', staffOnly: true,
     channels: [
-      { name: 'mod-log', setting: 'modLogChannel' },
-      { name: 'audit-logs', setting: 'logChannel' },
       { name: 'staff-chat' },
+      { name: 'mod-log', setting: 'modLogChannel' },
     ],
   },
 ];
@@ -270,7 +247,7 @@ module.exports = {
           `**Text channels:** ${created.text}\n` +
           `**Voice channels:** ${created.voice}\n` +
           `**Roles created:** 👑 Owner › 💎 Head Admin › 🛡️ Admin › ⚔️ Head Mod › 🔨 Moderator › 🎧 Helper › ⭐ Staff › 👤 Member › 🤖 Bots › 💤 Muted\n\n` +
-          `Mod-log, welcome, tickets, starboard, suggestions & level-up channels were auto-configured. ` +
+          `Mod-log, welcome (chat) & ticket channels were auto-configured. ` +
           `Run \`/config view\` to review everything.`,
         'Setup Complete',
       )
