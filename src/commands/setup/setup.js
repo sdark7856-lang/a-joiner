@@ -58,11 +58,15 @@ const TEMPLATE = [
 // Administrator; `staff` roles can see the staff-only category.
 const ROLE_TEMPLATE = [
   { key: 'owner', name: '👑 Owner', color: 0xf1c40f, hoist: true, admin: true },
-  { key: 'admin', name: '🛡️ Admin', color: 0xe74c3c, hoist: true, admin: true },
+  { key: 'headMod', name: '⚔️ Head Mod', color: 0xe74c3c, hoist: true, staff: true,
+    perms: ['ModerateMembers', 'ManageMessages', 'KickMembers', 'BanMembers', 'ManageNicknames', 'MuteMembers', 'DeafenMembers', 'MoveMembers', 'ViewAuditLog', 'ManageThreads', 'ManageChannels'] },
+  { key: 'headStaff', name: '🛡️ Head Staff', color: 0xe67e22, hoist: true, staff: true,
+    perms: ['ModerateMembers', 'ManageMessages', 'KickMembers', 'BanMembers', 'ManageNicknames', 'MuteMembers', 'DeafenMembers', 'MoveMembers', 'ViewAuditLog'] },
   { key: 'staff', name: '⭐ Staff', color: 0x5865f2, hoist: true, staff: true,
-    perms: ['KickMembers', 'BanMembers', 'ModerateMembers', 'ManageMessages', 'ManageNicknames', 'ViewAuditLog'] },
-  { key: 'premium', name: '💎 Premium', color: 0xeb459e, hoist: true, perms: [] },
-  { key: 'member', name: '👤 Member', color: 0x2ecc71, hoist: false, perms: [] },
+    perms: ['ModerateMembers', 'ManageMessages', 'KickMembers', 'ManageNicknames'] },
+  { key: 'mod', name: '🔨 Mod', color: 0x3498db, hoist: true, staff: true,
+    perms: ['ModerateMembers', 'ManageMessages'] },
+  { key: 'member', name: '👤 Member', color: 0x2ecc71, hoist: true, perms: [] },
   { key: 'muted', name: '💤 Muted', color: 0x4f545c, hoist: false, perms: [] },
 ];
 
@@ -240,7 +244,7 @@ module.exports = {
           `**Categories:** ${created.categories}\n` +
           `**Text channels:** ${created.text}\n` +
           `**Voice channels:** ${created.voice}\n` +
-          `**Roles created:** 👑 Owner › 🛡️ Admin › ⭐ Staff › 💎 Premium › 👤 Member › 💤 Muted\n\n` +
+          `**Roles created:** 👑 Owner › ⚔️ Head Mod › 🛡️ Head Staff › ⭐ Staff › 🔨 Mod › 👤 Member › 💤 Muted\n\n` +
           `Mod-log, welcome (chat) & ticket channels were auto-configured. ` +
           `Run \`/config view\` to review everything.`,
         'Setup Complete',
