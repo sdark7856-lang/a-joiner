@@ -2,8 +2,7 @@ const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require('disco
 const embed = require('../../lib/embed');
 
 const CHANNEL_KEYS = [
-  'modLogChannel', 'logChannel', 'welcomeChannel', 'goodbyeChannel',
-  'levelUpChannel', 'starboardChannel', 'suggestionChannel', 'confessionChannel', 'ticketChannel',
+  'modLogChannel', 'logChannel', 'welcomeChannel', 'goodbyeChannel', 'ticketChannel',
 ];
 
 const AUTOMOD_FILTERS = ['antiSpam', 'antiInvite', 'antiLink', 'antiCaps', 'antiMention', 'profanity'];
@@ -33,9 +32,6 @@ module.exports = {
         .addStringOption((o) => o.setName('filter').setDescription('Filter').setRequired(true)
           .addChoices(...AUTOMOD_FILTERS.map((f) => ({ name: f, value: f }))))
         .addBooleanOption((o) => o.setName('enabled').setDescription('On or off').setRequired(true)))
-    .addSubcommand((s) =>
-      s.setName('levels').setDescription('Enable or disable the XP/leveling system')
-        .addBooleanOption((o) => o.setName('enabled').setDescription('On or off').setRequired(true)))
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .setDMPermission(false),
 
@@ -52,10 +48,8 @@ module.exports = {
         .addFields(
           { name: '📋 Logging', value: `Mod-log: ${chan('modLogChannel')}\nAudit: ${chan('logChannel')}`, inline: true },
           { name: '👋 Welcome', value: `Welcome: ${chan('welcomeChannel')}\nGoodbye: ${chan('goodbyeChannel')}`, inline: true },
-          { name: '⭐ Engagement', value: `Level-ups: ${chan('levelUpChannel')}\nStarboard: ${chan('starboardChannel')}\nSuggestions: ${chan('suggestionChannel')}`, inline: true },
           { name: '🎫 Tickets', value: chan('ticketChannel'), inline: true },
           { name: '🎭 Autorole', value: s.autorole ? `<@&${s.autorole}>` : '—', inline: true },
-          { name: '📈 Leveling', value: s.levelsEnabled === false ? 'Disabled' : 'Enabled', inline: true },
           { name: '🤖 Auto-mod', value: AUTOMOD_FILTERS.map((f) => `${am[f] ? '🟢' : '⚪'} ${f}`).join('\n') },
         );
       return interaction.reply({ embeds: [e] });
@@ -86,11 +80,6 @@ module.exports = {
       am[filter] = enabled;
       db.setSetting(gid, 'automod', am);
       return interaction.reply({ embeds: [embed.success(`Auto-mod **${filter}** is now **${enabled ? 'on' : 'off'}**.`)] });
-    }
-
-    if (sub === 'levels') {
-      db.setSetting(gid, 'levelsEnabled', interaction.options.getBoolean('enabled'));
-      return interaction.reply({ embeds: [embed.success(`Leveling is now **${interaction.options.getBoolean('enabled') ? 'enabled' : 'disabled'}**.`)] });
     }
   },
 };
